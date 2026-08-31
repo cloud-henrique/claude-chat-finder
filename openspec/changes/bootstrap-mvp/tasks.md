@@ -1,8 +1,8 @@
 ## 1. Project Setup
 
-- [ ] 1.1 Initialize the Bun/TypeScript project (`package.json`, `tsconfig.json`, `bunfig.toml`) and verify `bun run` executes a placeholder entry file
-- [ ] 1.2 Configure linting/formatting and verify the lint command passes on a clean tree
-- [ ] 1.3 Add an MIT `LICENSE` and a minimal README skeleton, verify both files exist at the repo root
+- [x] 1.1 Initialize the Bun/TypeScript project (`package.json`, `tsconfig.json`) and verify `bun run` executes a placeholder entry file
+- [x] 1.2 Configure linting/formatting (Biome) and verify the lint command passes on a clean tree
+- [x] 1.3 Add an MIT `LICENSE` and a full README, verify both files exist at the repo root
 
 ## 2. Parser-Adapters Capability
 
