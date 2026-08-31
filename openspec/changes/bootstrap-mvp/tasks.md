@@ -22,10 +22,10 @@
 
 ## 4. Search Capability
 
-- [ ] 4.1 Implement free-text query against the FTS5 index with relevance ranking, verify a test query returns and ranks the expected fixture sessions
-- [ ] 4.2 Implement the case-sensitive/case-insensitive toggle, verify a test asserts case-sensitive mode excludes a differently-cased match
-- [ ] 4.3 Implement whole-word match mode, verify a test asserts a substring like "login" does not match a whole-word query for "log"
-- [ ] 4.4 Implement regex search mode with invalid-pattern handling, verify tests cover a valid pattern returning matches and an invalid pattern returning a clean error instead of crashing
+- [x] 4.1 Implement free-text query against the FTS5 index with relevance ranking, verify a test query returns and ranks the expected fixture sessions
+- [x] 4.2 Implement the case-sensitive/case-insensitive toggle, verify a test asserts case-sensitive mode excludes a differently-cased match
+- [x] 4.3 Implement whole-word match mode, verify a test asserts a substring like "login" does not match a whole-word query for "log"
+- [x] 4.4 Implement regex search mode with invalid-pattern handling, verify tests cover a valid pattern returning matches and an invalid pattern returning a clean error instead of crashing
 
 ## 5. TUI Capability
 
