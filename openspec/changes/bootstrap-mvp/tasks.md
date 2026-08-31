@@ -6,11 +6,11 @@
 
 ## 2. Parser-Adapters Capability
 
-- [ ] 2.1 Define the `ChatAdapter` interface and normalized `Session`/`Message` types, verify the project type-checks with no implicit `any` in the interface
-- [ ] 2.2 Implement the Claude Code adapter reading `~/.claude/projects/**/*.jsonl`, verify a unit test parses a fixture JSONL file into the expected normalized session
-- [ ] 2.3 Resolve each session's real project path from the JSONL events' `cwd` field (not by decoding the sanitized folder name), verify a fixture whose real path contains a literal `-` still resolves correctly
-- [ ] 2.4 Handle malformed/corrupt session files without aborting the indexing run, verify a unit test with a corrupt fixture file logs a warning and the run still completes
-- [ ] 2.5 Support the Windows home-directory equivalent for the Claude Code adapter, verify a test with a mocked Windows path resolves the correct projects directory
+- [x] 2.1 Define the `ChatAdapter` interface and normalized `Session`/`Message` types, verify the project type-checks with no implicit `any` in the interface
+- [x] 2.2 Implement the Claude Code adapter reading `~/.claude/projects/**/*.jsonl`, verify a unit test parses a fixture JSONL file into the expected normalized session
+- [x] 2.3 Resolve each session's real project path from the JSONL events' `cwd` field (not by decoding the sanitized folder name), verify a fixture whose real path contains a literal `-` still resolves correctly
+- [x] 2.4 Handle malformed/corrupt session files without aborting the indexing run, verify a unit test with a corrupt fixture file logs a warning and the run still completes
+- [x] 2.5 Support the Windows home-directory equivalent for the Claude Code adapter, verify a test with a mocked Windows path resolves the correct projects directory
 
 ## 3. Chat-Indexing Capability
 

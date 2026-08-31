@@ -1,0 +1,1 @@
+{"type":"user","message":{"role":"user","content":"does this resolve from cwd, not the folder name?"},"cwd":"/Users/foo-bar/baz","timestamp":"2026-01-01T00:00:00.000Z","sessionId":"22222222-2222-2222-2222-222222222222"}
