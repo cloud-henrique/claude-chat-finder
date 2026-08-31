@@ -14,11 +14,11 @@
 
 ## 3. Chat-Indexing Capability
 
-- [ ] 3.1 Set up the `bun:sqlite` database with an FTS5 virtual table schema, verify an init script creates the expected schema on a fresh file
-- [ ] 3.2 Implement a full index build from all registered adapters' sessions, verify running it against fixture sessions populates the expected row count
-- [ ] 3.3 Implement incremental re-indexing based on source file mtime, verify a test that touches one fixture file only re-parses that file
-- [ ] 3.4 Prune index rows for session files that no longer exist on disk, verify a test that deletes a fixture file also removes its rows after re-index
-- [ ] 3.5 Resolve the OS-appropriate config/cache directory for the index file, verify it resolves to the correct path on macOS, Linux, and Windows via unit tests with mocked platform info
+- [x] 3.1 Set up the `bun:sqlite` database with an FTS5 virtual table schema, verify an init script creates the expected schema on a fresh file
+- [x] 3.2 Implement a full index build from all registered adapters' sessions, verify running it against fixture sessions populates the expected row count
+- [x] 3.3 Implement incremental re-indexing based on source file mtime, verify a test that touches one fixture file only re-parses that file
+- [x] 3.4 Prune index rows for session files that no longer exist on disk, verify a test that deletes a fixture file also removes its rows after re-index
+- [x] 3.5 Resolve the OS-appropriate config/cache directory for the index file, verify it resolves to the correct path on macOS, Linux, and Windows via unit tests with mocked platform info
 
 ## 4. Search Capability
 
