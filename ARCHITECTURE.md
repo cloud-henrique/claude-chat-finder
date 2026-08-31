@@ -1,30 +1,30 @@
-# Arquitetura
+# Architecture
 
-Mapa de alto nível do `claude-chat-finder` para quem for contribuir. A fonte da verdade detalhada — requirements testáveis e o raciocínio por trás de cada decisão — vive no OpenSpec: [`openspec/specs/`](openspec/specs/) (specs ativas, após archive) e [`openspec/changes/bootstrap-mvp/design.md`](openspec/changes/bootstrap-mvp/design.md) (decisões desta primeira leva de trabalho). Este documento é só o resumo estável pra orientar quem está lendo o código pela primeira vez.
+High-level map of `claude-chat-finder` for contributors. The detailed source of truth — testable requirements and the reasoning behind each decision — lives in OpenSpec: [`openspec/specs/`](openspec/specs/) (active specs, once archived) and [`openspec/changes/bootstrap-mvp/design.md`](openspec/changes/bootstrap-mvp/design.md) (decisions from this first batch of work). This document is just the stable summary for anyone reading the code for the first time.
 
-## Visão geral
+## Overview
 
 ```mermaid
 flowchart LR
-    subgraph Fonte["Fontes de chat (disco local)"]
+    subgraph Source["Chat sources (local disk)"]
         CC["~/.claude/projects/**/*.jsonl<br/>(Claude Code)"]
-        Other["outras ferramentas<br/>(futuro)"]
+        Other["other tools<br/>(future)"]
     end
 
     subgraph Adapters["parser-adapters"]
         CCAdapter["ClaudeCodeAdapter"]
-        FutureAdapter["(futuro adapter)"]
+        FutureAdapter["(future adapter)"]
     end
 
-    subgraph Core["núcleo"]
+    subgraph Core["core"]
         Indexer["chat-indexing<br/>(build + incremental)"]
-        DB[("SQLite FTS5<br/>índice local")]
-        Search["search<br/>(texto livre, case,<br/>whole-word, regex)"]
+        DB[("SQLite FTS5<br/>local index")]
+        Search["search<br/>(free text, case,<br/>whole-word, regex)"]
     end
 
     subgraph UI["interface"]
         TUI["tui (Ink)"]
-        Export["export<br/>(copiar MD/JSON,<br/>abrir no Finder/Explorer)"]
+        Export["export<br/>(copy MD/JSON,<br/>open in Finder/Explorer)"]
     end
 
     CC --> CCAdapter
@@ -37,22 +37,22 @@ flowchart LR
     TUI --> Export
 ```
 
-Fluxo: cada **adapter** lê uma fonte de chats e devolve sessões no formato normalizado. O **indexador** consome sessões de todos os adapters registrados e mantém um banco **SQLite FTS5** local atualizado incrementalmente. A **busca** consulta esse índice aplicando os modificadores (case sensitive, whole word, regex). A **TUI** (Ink) é a única consumidora da busca em tempo real, e delega ações de **export** (copiar, abrir arquivo) sobre a sessão selecionada.
+Flow: each **adapter** reads one chat source and returns sessions in the normalized format. The **indexer** consumes sessions from every registered adapter and keeps a local **SQLite FTS5** database incrementally up to date. **Search** queries that index, applying the modifiers (case sensitive, whole word, regex). The **TUI** (Ink) is the sole real-time consumer of search, and delegates **export** actions (copy, open file) on the selected session.
 
-## Módulos
+## Modules
 
-| Módulo | Capability (OpenSpec) | Responsabilidade |
+| Module | Capability (OpenSpec) | Responsibility |
 |---|---|---|
-| `src/adapters/` | [`parser-adapters`](openspec/changes/bootstrap-mvp/specs/parser-adapters/spec.md) | Interface `ChatAdapter` + implementação `ClaudeCodeAdapter` |
-| `src/indexing/` | [`chat-indexing`](openspec/changes/bootstrap-mvp/specs/chat-indexing/spec.md) | Schema do SQLite FTS5, build inicial, re-index incremental por mtime, poda de sessões removidas |
-| `src/search/` | [`search`](openspec/changes/bootstrap-mvp/specs/search/spec.md) | Query engine sobre o índice: texto livre, ranking, case/whole-word/regex |
-| `src/tui/` | [`tui`](openspec/changes/bootstrap-mvp/specs/tui/spec.md) | Componentes Ink: input de busca, lista de resultados, preview em Markdown |
-| `src/export/` | [`export`](openspec/changes/bootstrap-mvp/specs/export/spec.md) | Copiar para clipboard (MD/JSON), abrir arquivo no file manager do SO |
-| `src/cli.ts` | — | Entry point: inicializa adapters, roda indexação, sobe a TUI |
+| `src/adapters/` | [`parser-adapters`](openspec/changes/bootstrap-mvp/specs/parser-adapters/spec.md) | `ChatAdapter` interface + `ClaudeCodeAdapter` implementation |
+| `src/indexing/` | [`chat-indexing`](openspec/changes/bootstrap-mvp/specs/chat-indexing/spec.md) | SQLite FTS5 schema, initial build, incremental re-index by mtime, pruning of removed sessions |
+| `src/search/` | [`search`](openspec/changes/bootstrap-mvp/specs/search/spec.md) | Query engine over the index: free text, ranking, case/whole-word/regex |
+| `src/tui/` | [`tui`](openspec/changes/bootstrap-mvp/specs/tui/spec.md) | Ink components: search input, result list, Markdown preview |
+| `src/export/` | [`export`](openspec/changes/bootstrap-mvp/specs/export/spec.md) | Copy to clipboard (MD/JSON), open the file in the OS's file manager |
+| `src/cli.ts` | — | Entry point: initializes adapters, runs indexing, launches the TUI |
 
-Nenhum módulo de UI ou busca conhece o formato bruto de um adapter específico — todos falam apenas o modelo normalizado (`Session` / `Message`) definido em `src/adapters/types.ts`.
+No UI or search module knows the raw format of any specific adapter — they all speak only the normalized model (`Session` / `Message`) defined in `src/adapters/types.ts`.
 
-## Contrato do adapter
+## Adapter contract
 
 ```ts
 interface ChatAdapter {
@@ -62,9 +62,9 @@ interface ChatAdapter {
 
 interface Session {
   id: string;
-  source: string;        // id do adapter que produziu esta sessão
-  projectPath: string;    // path real do projeto, lido do próprio conteúdo do evento — nunca decodificado do nome da pasta
-  filePath: string;       // arquivo de origem no disco
+  source: string;        // id of the adapter that produced this session
+  projectPath: string;    // the project's real path, read from the event content itself — never decoded from the folder name
+  filePath: string;       // source file on disk
   mtimeMs: number;
   messages: Message[];
 }
@@ -76,23 +76,23 @@ interface Message {
 }
 ```
 
-**Gotcha importante**: o Claude Code sanitiza o path do projeto no nome da pasta trocando `/` por `-` (ex.: `/Users/x/my-app` vira `-Users-x-my-app`). Essa transformação é **ambígua** — um path com hífen literal não pode ser reconstruído de volta com segurança. Por isso o `ClaudeCodeAdapter` sempre lê o path real do campo `cwd` presente em cada evento do próprio JSONL, nunca decodificando o nome do diretório.
+**Important gotcha**: Claude Code sanitizes the project path in the folder name by replacing `/` with `-` (e.g., `/Users/x/my-app` becomes `-Users-x-my-app`). This transformation is **ambiguous** — a path with a literal hyphen cannot be safely reconstructed from it. That's why `ClaudeCodeAdapter` always reads the real path from the `cwd` field present in each JSONL event itself, never by decoding the directory name.
 
-## Índice (SQLite FTS5)
+## Index (SQLite FTS5)
 
-- Uma tabela de sessões (metadados: `filePath`, `mtimeMs`, `projectPath`, `source`) e uma tabela virtual FTS5 para o conteúdo das mensagens.
-- Re-index é incremental: só arquivos com `mtimeMs` diferente do valor gravado são reprocessados; sessões cujo arquivo sumiu do disco são removidas do índice.
-- Fica em um diretório de config/cache por SO — ver [Configuração no README](README.md#configuração). Resolução de path por plataforma deve usar uma lib estabelecida, não lógica própria (ver Open Questions em `design.md`).
+- One sessions table (metadata: `filePath`, `mtimeMs`, `projectPath`, `source`) and one FTS5 virtual table for message content.
+- Re-indexing is incremental: only files whose `mtimeMs` differs from the stored value are reprocessed; sessions whose file has vanished from disk are removed from the index.
+- Lives in a per-OS config/cache directory — see [Configuration in the README](README.md#configuration). Per-platform path resolution should use an established library, not hand-rolled logic (see Open Questions in `design.md`).
 
-## Build e distribuição
+## Build and distribution
 
-CI (GitHub Actions) roda `bun build --compile` numa matriz macOS/Linux/Windows e publica os binários resultantes como assets de uma GitHub Release taggeada. Não há publish no npm no caminho de instalação do usuário final — `bun install` só é necessário pra quem for contribuir com o código-fonte.
+CI (GitHub Actions) runs `bun build --compile` across a macOS/Linux/Windows matrix and publishes the resulting binaries as assets on a tagged GitHub Release. There's no npm publish in the end-user install path — `bun install` is only needed for contributors working on the source.
 
-## Por que este desenho
+## Why this design
 
-O raciocínio completo (alternativas consideradas, riscos, trade-offs) está em [`design.md`](openspec/changes/bootstrap-mvp/design.md). Resumo:
+The full reasoning (alternatives considered, risks, trade-offs) is in [`design.md`](openspec/changes/bootstrap-mvp/design.md). Summary:
 
-- **Bun + TypeScript**: aproveita a experiência já existente com JS/TS e dá `bun:sqlite` + `bun build --compile` "de graça" — binário único sem runtime externo.
-- **Ink**: TUI com componentes ao estilo React, mesma linguagem mental do resto do ecossistema JS/TS.
-- **SQLite FTS5** em vez de scan on-the-fly: histórico cresce, e um índice invertido é o jeito certo de manter busca instantânea — "busca binária" não se aplica a full-text search porque exige dados ordenados.
-- **Adapters desde o início**: evita reescrever indexação/busca/TUI se um adapter para outra ferramenta (Cursor, Aider, Codex CLI, etc.) for adicionado depois.
+- **Bun + TypeScript**: builds on existing JS/TS experience and gets `bun:sqlite` + `bun build --compile` "for free" — a single binary with no external runtime.
+- **Ink**: a TUI with React-style components, the same mental model as the rest of the JS/TS ecosystem.
+- **SQLite FTS5** instead of on-the-fly scanning: history grows over time, and an inverted index is the right way to keep search instant — "binary search" doesn't apply to full-text search because it requires sorted data.
+- **Adapters from day one**: avoids rewriting indexing/search/TUI if an adapter for another tool (Cursor, Aider, Codex CLI, etc.) is added later.
