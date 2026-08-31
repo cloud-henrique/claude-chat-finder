@@ -1,7 +1,7 @@
 {
   "name": "claude-chat-finder",
   "version": "0.1.0",
-  "description": "TUI open source para buscar e navegar no seu histórico de chats do Claude Code — local, offline e sem telemetria.",
+  "description": "Open-source TUI to search and browse your Claude Code chat history — local, offline, and telemetry-free.",
   "license": "MIT",
   "private": true,
   "type": "module",

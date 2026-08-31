@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
 
 console.log(
-  "claude-chat-finder (ccf) — em desenvolvimento. A TUI ainda não foi implementada.",
+  "claude-chat-finder (ccf) — under development. The TUI hasn't been implemented yet.",
 );

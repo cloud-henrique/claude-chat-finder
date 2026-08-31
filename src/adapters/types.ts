@@ -1,6 +1,6 @@
 /**
- * Contrato comum que todo adapter de fonte de chat deve implementar.
- * Ver ARCHITECTURE.md#contrato-do-adapter e a spec `parser-adapters`.
+ * Common contract every chat-source adapter must implement.
+ * See ARCHITECTURE.md#adapter-contract and the `parser-adapters` spec.
  */
 export interface ChatAdapter {
   readonly id: string;
@@ -9,15 +9,15 @@ export interface ChatAdapter {
 
 export interface Session {
   id: string;
-  /** id do adapter que produziu esta sessão */
+  /** id of the adapter that produced this session */
   source: string;
   /**
-   * Path real do projeto. Deve vir do próprio conteúdo do evento (ex.: campo
-   * `cwd` do JSONL do Claude Code) — nunca decodificado do nome da pasta,
-   * que é uma transformação ambígua (`/` → `-`).
+   * The project's real path. Must come from the event's own content (e.g.
+   * Claude Code's JSONL `cwd` field) — never decoded from the folder name,
+   * which is an ambiguous transformation (`/` → `-`).
    */
   projectPath: string;
-  /** Arquivo de origem no disco. */
+  /** Source file on disk. */
   filePath: string;
   mtimeMs: number;
   messages: Message[];

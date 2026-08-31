@@ -1,41 +1,41 @@
 # claude-chat-finder
 
-Encontre qualquer conversa antiga que você já teve com o [Claude Code](https://claude.com/claude-code) — em segundos, direto do terminal.
+Find any past conversation you've had with [Claude Code](https://claude.com/claude-code) — in seconds, right from your terminal.
 
-> 🚧 **Status: em planejamento/implementação inicial.** O plano completo (proposta, specs e tarefas) já está definido em [`openspec/changes/bootstrap-mvp`](openspec/changes/bootstrap-mvp/proposal.md). Este README descreve o comportamento alvo do MVP e será atualizado conforme o código avança.
+> 🚧 **Status: planning / early implementation.** The full plan (proposal, specs, and tasks) is already defined in [`openspec/changes/bootstrap-mvp`](openspec/changes/bootstrap-mvp/proposal.md). This README describes the MVP's target behavior and will be updated as the code progresses.
 
-## O problema
+## The problem
 
-O Claude Code guarda cada conversa como arquivos JSONL em `~/.claude/projects/`, mas não existe uma forma de achar um chat específico além de rodar `grep` manualmente em cada pasta de projeto. Quem usa o Claude Code todo dia (terminal, extensão do VS Code, ou qualquer outra integração que compartilhe o mesmo armazenamento local) acumula centenas de sessões e não tem como buscar, ver preview ou recuperar uma conversa antiga rapidamente.
+Claude Code stores every conversation as JSONL files under `~/.claude/projects/`, but there's no way to find a specific past chat besides manually running `grep` across every project folder. Anyone who uses Claude Code daily (terminal, VS Code extension, or any other integration that shares the same local storage) accumulates hundreds of sessions with no fast way to search, preview, or retrieve an old conversation.
 
-`claude-chat-finder` (`ccf`) resolve isso: um binário único, sem dependências, que indexa seu histórico local e te dá uma TUI rápida pra buscar nele.
+`claude-chat-finder` (`ccf`) fixes that: a single, dependency-free binary that indexes your local history and gives you a fast TUI to search it.
 
 ## Features
 
-- 🔍 **Busca full-text instantânea** sobre todo o seu histórico, via índice local (SQLite FTS5)
-- 🎛️ **Modos de busca**: case sensitive/insensitive, whole word, regex
-- 🖥️ **TUI interativa**: navegação por teclado, busca ao digitar, preview em Markdown
-- 📋 **Copiar chat** como Markdown ou como JSON
-- 📂 **Abrir no Finder/Explorer**: pula direto pro arquivo `.jsonl` da sessão
-- 🧩 **Arquitetura com adapters**: hoje só lê o formato do Claude Code, mas a interface já é pensada pra outras ferramentas de AI CLI no futuro
-- 🔒 **100% local e offline**: nenhuma chamada de rede, nenhuma telemetria — seu histórico de chat pode conter código e segredos sensíveis
-- 💻 **Cross-platform**: macOS, Linux e Windows, sem exigir Node/Bun instalado
+- 🔍 **Instant full-text search** across your entire history, via a local index (SQLite FTS5)
+- 🎛️ **Search modes**: case sensitive/insensitive, whole word, regex
+- 🖥️ **Interactive TUI**: keyboard navigation, search-as-you-type, Markdown preview
+- 📋 **Copy a chat** as Markdown or as JSON
+- 📂 **Open in Finder/Explorer**: jump straight to the session's `.jsonl` file
+- 🧩 **Adapter-based architecture**: only reads the Claude Code format today, but the interface is already designed for other AI CLI tools down the road
+- 🔒 **100% local and offline**: no network calls, no telemetry — your chat history can contain sensitive code and secrets
+- 💻 **Cross-platform**: macOS, Linux, and Windows, no Node/Bun installation required
 
-Detalhes de comportamento (com cenários testáveis) estão nas specs de cada capability em [`openspec/changes/bootstrap-mvp/specs/`](openspec/changes/bootstrap-mvp/specs/).
+Behavioral details (with testable scenarios) live in each capability's spec under [`openspec/changes/bootstrap-mvp/specs/`](openspec/changes/bootstrap-mvp/specs/).
 
-## Instalação
+## Installation
 
-### Binário pré-compilado (recomendado, assim que a primeira release sair)
+### Pre-built binary (recommended, once the first release ships)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/cloud-henrique/claude-chat-finder/main/install.sh | sh
 ```
 
-Binários para macOS, Linux e Windows serão publicados em [GitHub Releases](../../releases) — nenhum runtime precisa estar instalado.
+macOS, Linux, and Windows binaries will be published on [GitHub Releases](../../releases) — no runtime needs to be installed.
 
-### A partir do código-fonte (para contribuir)
+### From source (to contribute)
 
-Requer [Bun](https://bun.sh) instalado.
+Requires [Bun](https://bun.sh).
 
 ```bash
 git clone https://github.com/cloud-henrique/claude-chat-finder.git
@@ -44,60 +44,60 @@ bun install
 bun run dev
 ```
 
-Para gerar um binário local:
+To build a local binary:
 
 ```bash
 bun run build
 ```
 
-## Uso
+## Usage
 
 ```bash
 ccf
 ```
 
-Isso abre a TUI já indexando (ou reindexando incrementalmente) o seu histórico do Claude Code.
+This opens the TUI, indexing (or incrementally re-indexing) your Claude Code history as needed.
 
-| Ação | Atalho |
+| Action | Shortcut |
 |---|---|
-| Buscar | digitar (busca ao vivo, sem precisar apertar Enter) |
-| Navegar resultados | `↑` / `↓` |
-| Ver preview do chat selecionado | seleção automática ao navegar |
-| Copiar chat como Markdown | `c` `m` (a definir na implementação) |
-| Copiar chat como JSON | `c` `j` (a definir na implementação) |
-| Abrir arquivo no Finder/Explorer | `o` (a definir na implementação) |
-| Alternar case sensitive / whole word / regex | menu de opções de busca |
-| Sair | `Esc` / `Ctrl+C` |
+| Search | type (live search, no need to press Enter) |
+| Navigate results | `↑` / `↓` |
+| Preview the selected chat | automatic on selection |
+| Copy chat as Markdown | `c` `m` (to be finalized during implementation) |
+| Copy chat as JSON | `c` `j` (to be finalized during implementation) |
+| Open file in Finder/Explorer | `o` (to be finalized during implementation) |
+| Toggle case sensitive / whole word / regex | search options menu |
+| Quit | `Esc` / `Ctrl+C` |
 
-> Os atalhos exatos serão confirmados durante a implementação da capability [`tui`](openspec/changes/bootstrap-mvp/specs/tui/spec.md) e atualizados aqui.
+> Exact shortcuts will be finalized while implementing the [`tui`](openspec/changes/bootstrap-mvp/specs/tui/spec.md) capability and updated here.
 
-## Como funciona
+## How it works
 
-Visão rápida: adapters leem os arquivos de chat da fonte (hoje, só Claude Code) → um indexador normaliza e grava tudo num SQLite FTS5 local → a busca consulta esse índice → a TUI mostra e deixa exportar os resultados.
+Quick overview: adapters read chat files from a source (today, only Claude Code) → an indexer normalizes and writes everything to a local SQLite FTS5 database → search queries that index → the TUI displays and lets you export the results.
 
-Detalhes de arquitetura, decisões técnicas e trade-offs estão em [`ARCHITECTURE.md`](ARCHITECTURE.md) e em [`openspec/changes/bootstrap-mvp/design.md`](openspec/changes/bootstrap-mvp/design.md).
+Architecture details, technical decisions, and trade-offs live in [`ARCHITECTURE.md`](ARCHITECTURE.md) and in [`openspec/changes/bootstrap-mvp/design.md`](openspec/changes/bootstrap-mvp/design.md).
 
-## Configuração
+## Configuration
 
-O índice local fica no diretório de config/cache padrão do seu SO (ex.: `~/Library/Application Support/claude-chat-finder` no macOS, XDG no Linux, `%LOCALAPPDATA%\claude-chat-finder` no Windows). Nenhuma configuração manual é necessária para o uso básico.
+The local index lives in your OS's standard config/cache directory (e.g. `~/Library/Application Support/claude-chat-finder` on macOS, XDG on Linux, `%LOCALAPPDATA%\claude-chat-finder` on Windows). No manual configuration is needed for basic use.
 
-## Privacidade
+## Privacy
 
-Este projeto não faz nenhuma chamada de rede e não coleta telemetria. Todo o processamento — leitura dos arquivos, indexação e busca — acontece localmente na sua máquina, porque seu histórico de chat pode conter informações sensíveis do seu código e dos seus projetos.
+This project makes no network calls and collects no telemetry. All processing — reading files, indexing, and search — happens locally on your machine, because your chat history can contain sensitive information from your code and projects.
 
-## Contribuindo
+## Contributing
 
-Projeto open source (MIT) — forks, issues e PRs são bem-vindos.
+Open-source project (MIT) — forks, issues, and PRs are welcome.
 
-Este repositório usa [OpenSpec](https://github.com/Fission-AI/OpenSpec) para planejamento orientado a specs. Para propor uma mudança maior (nova capability, mudança de comportamento), abra uma proposta antes do código:
+This repository uses [OpenSpec](https://github.com/Fission-AI/OpenSpec) for spec-driven planning. For a larger change (new capability, behavior change), open a proposal before writing code:
 
 ```bash
-openspec init          # se ainda não tiver o CLI configurado localmente
-/opsx:propose "sua ideia aqui"
+openspec init          # if you don't have the CLI set up locally yet
+/opsx:propose "your idea here"
 ```
 
-Specs vigentes ficam em `openspec/specs/`, mudanças em andamento em `openspec/changes/`. Para correções pequenas (typo, bug simples), um PR direto já é suficiente.
+Current specs live in `openspec/specs/`, in-progress changes in `openspec/changes/`. For small fixes (typos, simple bugs), a direct PR is enough.
 
-## Licença
+## License
 
-MIT — veja [`LICENSE`](LICENSE).
+MIT — see [`LICENSE`](LICENSE).

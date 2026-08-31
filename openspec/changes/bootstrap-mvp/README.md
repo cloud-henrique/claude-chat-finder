@@ -1,3 +1,3 @@
 # bootstrap-mvp
 
-MVP: TUI para buscar, indexar e navegar no histórico de chats do Claude Code
+MVP: TUI to search, index, and browse Claude Code chat history

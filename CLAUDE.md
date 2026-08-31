@@ -1,52 +1,52 @@
 # CLAUDE.md
 
-Contexto de projeto para o Claude Code trabalhando neste repositório.
+Project context for Claude Code working in this repository.
 
-## O que é este projeto
+## What this project is
 
-`claude-chat-finder` (binário: `ccf`) é uma TUI open source para buscar, indexar e navegar no histórico local de chats do Claude Code (`~/.claude/projects/**/*.jsonl`). Veja [`README.md`](README.md) para a visão de produto e [`ARCHITECTURE.md`](ARCHITECTURE.md) para o desenho técnico.
+`claude-chat-finder` (binary: `ccf`) is an open-source TUI for searching, indexing, and browsing the local Claude Code chat history (`~/.claude/projects/**/*.jsonl`). See [`README.md`](README.md) for the product vision and [`ARCHITECTURE.md`](ARCHITECTURE.md) for the technical design.
 
-O projeto está sendo desenvolvido com [OpenSpec](https://github.com/Fission-AI/OpenSpec) (spec-driven development). A primeira mudança, com toda a proposta/specs/design/tarefas, está em [`openspec/changes/bootstrap-mvp/`](openspec/changes/bootstrap-mvp/).
+The project is being built with [OpenSpec](https://github.com/Fission-AI/OpenSpec) (spec-driven development). The first change, with the full proposal/specs/design/tasks, is in [`openspec/changes/bootstrap-mvp/`](openspec/changes/bootstrap-mvp/).
 
 ## Stack
 
-- **Runtime**: Bun (não Node puro — usa `bun:sqlite` e `bun build --compile`)
-- **Linguagem**: TypeScript
-- **TUI**: Ink (componentes ao estilo React)
-- **Índice de busca**: SQLite FTS5 via `bun:sqlite`
-- **Distribuição**: binários únicos por SO via `bun build --compile`, publicados em GitHub Releases
+- **Runtime**: Bun (not plain Node — uses `bun:sqlite` and `bun build --compile`)
+- **Language**: TypeScript
+- **TUI**: Ink (React-style components)
+- **Search index**: SQLite FTS5 via `bun:sqlite`
+- **Distribution**: single-file binaries per OS via `bun build --compile`, published on GitHub Releases
 
-## Comandos (uma vez que o projeto esteja inicializado)
+## Commands (once the project is initialized)
 
 ```bash
-bun install       # instalar dependências
-bun run dev       # rodar a TUI em modo desenvolvimento
-bun test          # rodar testes
+bun install       # install dependencies
+bun run dev       # run the TUI in development mode
+bun test          # run tests
 bun run lint      # lint/format
-bun run build     # gerar binário local via bun build --compile
+bun run build     # produce a local binary via bun build --compile
 ```
 
-## Fluxo de trabalho com OpenSpec
+## Working with OpenSpec
 
-Este repo usa OpenSpec para mudanças não-triviais (nova capability, mudança de comportamento observável). Fluxo:
+This repo uses OpenSpec for non-trivial changes (a new capability, an observable behavior change). Flow:
 
-1. `/opsx:propose "descrição da ideia"` — cria `openspec/changes/<nome>/` com proposal, specs, design e tasks
-2. Revisar os artefatos antes de implementar
-3. `/opsx:apply` — implementa `tasks.md` do change ativo
-4. `/opsx:archive` — arquiva o change e sincroniza `openspec/specs/` como fonte da verdade
+1. `/opsx:propose "description of the idea"` — creates `openspec/changes/<name>/` with proposal, specs, design, and tasks
+2. Review the artifacts before implementing
+3. `/opsx:apply` — implements the active change's `tasks.md`
+4. `/opsx:archive` — archives the change and syncs `openspec/specs/` as the source of truth
 
-Para correções pequenas (typo, bug isolado, sem mudança de comportamento observável), não é necessário abrir um change — pode editar direto.
+For small fixes (typo, isolated bug, no observable behavior change), opening a change isn't necessary — edit directly.
 
-**Change ativo no momento**: `bootstrap-mvp` (MVP completo — todas as 6 capabilities). Ver [`tasks.md`](openspec/changes/bootstrap-mvp/tasks.md) para o checklist de implementação em ordem.
+**Currently active change**: `bootstrap-mvp` (the full MVP — all 6 capabilities). See [`tasks.md`](openspec/changes/bootstrap-mvp/tasks.md) for the implementation checklist, in order.
 
-## Convenções e restrições do projeto
+## Project conventions and constraints
 
-- **Zero rede, zero telemetria.** O histórico de chat indexado pode conter código e segredos sensíveis do usuário. Nenhuma chamada de rede deve ser adicionada em nenhum módulo do core (adapters, indexing, search). Isso é um requirement, não uma preferência de estilo — está em [`cross-platform-distribution`](openspec/changes/bootstrap-mvp/specs/cross-platform-distribution/spec.md) e no design.md.
-- **Path do projeto vem do `cwd` do evento, nunca do nome da pasta decodificado.** O Claude Code sanitiza `/` → `-` no nome da pasta de forma ambígua (um path com hífen literal não é reversível). Sempre ler o path real do campo `cwd` dentro do próprio JSONL. Ver gotcha detalhado em [`ARCHITECTURE.md`](ARCHITECTURE.md#contrato-do-adapter).
-- **Módulos de indexação/busca/TUI nunca conhecem o formato bruto de um adapter.** Tudo passa pelo modelo normalizado `Session`/`Message` definido pela interface `ChatAdapter`. Ao adicionar um adapter novo, ele deve implementar essa interface — não vaze detalhes do formato de origem para fora de `src/adapters/`.
-- **Cross-platform de verdade.** macOS, Linux e Windows são todos alvo do MVP. Qualquer código que toque path de filesystem, diretório de config ou abertura do file manager do SO precisa considerar os três — sem assumir POSIX-only.
-- **Sem abstrações prematuras.** Só existe um adapter (Claude Code) no MVP; a interface existe para não travar um adapter futuro, não para generalizar código que ainda não tem um segundo caso de uso real.
+- **Zero network, zero telemetry.** The indexed chat history can contain the user's code and secrets. No network call should be added to any core module (adapters, indexing, search). This is a requirement, not a style preference — it's in [`cross-platform-distribution`](openspec/changes/bootstrap-mvp/specs/cross-platform-distribution/spec.md) and in design.md.
+- **The project path comes from the event's `cwd`, never from the decoded folder name.** Claude Code sanitizes `/` → `-` in the folder name ambiguously (a path with a literal hyphen isn't reversible). Always read the real path from the `cwd` field inside the JSONL itself. See the detailed gotcha in [`ARCHITECTURE.md`](ARCHITECTURE.md#adapter-contract).
+- **Indexing/search/TUI modules never know an adapter's raw format.** Everything goes through the normalized `Session`/`Message` model defined by the `ChatAdapter` interface. When adding a new adapter, it must implement that interface — don't leak source-format details outside `src/adapters/`.
+- **Genuinely cross-platform.** macOS, Linux, and Windows are all MVP targets. Any code touching filesystem paths, the config directory, or opening the OS's file manager needs to account for all three — don't assume POSIX-only.
+- **No premature abstraction.** Only one adapter (Claude Code) exists in the MVP; the interface exists so a future adapter isn't blocked, not to generalize code that doesn't have a second real use case yet.
 
-## Testes
+## Tests
 
-Cada requirement nas specs de `openspec/changes/bootstrap-mvp/specs/*/spec.md` tem cenários no formato WHEN/THEN pensados para virar casos de teste. Ao implementar uma tarefa de `tasks.md`, o critério de verificação já está descrito no próprio item da tarefa.
+Every requirement in `openspec/changes/bootstrap-mvp/specs/*/spec.md` has scenarios in WHEN/THEN format meant to become test cases. When implementing a `tasks.md` item, the verification criteria is already described in that task itself.
