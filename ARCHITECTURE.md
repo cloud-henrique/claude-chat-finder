@@ -82,7 +82,7 @@ interface Message {
 
 - One sessions table (metadata: `filePath`, `mtimeMs`, `projectPath`, `source`) and one FTS5 virtual table for message content.
 - Re-indexing is incremental: only files whose `mtimeMs` differs from the stored value are reprocessed; sessions whose file has vanished from disk are removed from the index.
-- Lives in a per-OS config/cache directory — see [Configuration in the README](README.md#configuration). Per-platform path resolution should use an established library, not hand-rolled logic (see Open Questions in `design.md`).
+- Lives in a per-OS config/cache directory — see [Configuration in the README](README.md#configuration). Per-platform path resolution is hand-rolled in `src/indexing/paths.ts` rather than delegated to a library: `resolveIndexDbPath(home, platform, env)` takes the platform as a parameter, so each OS's convention is assertable from any test host. A library like `env-paths` always joins through the *live* host's `node:path`, which makes exact Windows-style output untestable from macOS/Linux CI. The conventions themselves are the standard ones (XDG on Linux, `Application Support` on macOS, `%LOCALAPPDATA%` on Windows) — only the path-joining is inline. See the resolved Open Question in `design.md`.
 
 ## Build and distribution
 
