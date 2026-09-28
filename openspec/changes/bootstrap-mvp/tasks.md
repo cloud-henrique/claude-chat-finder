@@ -29,11 +29,11 @@
 
 ## 5. TUI Capability
 
-- [ ] 5.1 Scaffold the Ink app shell (search input, result list, preview pane layout), verify the dev command launches the TUI without errors
-- [ ] 5.2 Wire live search-as-you-type to the search capability, verify manually that typing updates the result list without a submit action
-- [ ] 5.3 Implement keyboard navigation across the result list, verify manually that up/down changes the selection and updates the preview pane
-- [ ] 5.4 Render the selected chat as Markdown (including code blocks) in the preview pane, verify manually against a fixture chat containing code blocks
-- [ ] 5.5 Manually verify the TUI renders and accepts keyboard input correctly in a real terminal on macOS, Linux, and Windows
+- [x] 5.1 Scaffold the Ink app shell (search input, result list, preview pane layout), verify the dev command launches the TUI without errors
+- [x] 5.2 Wire live search-as-you-type to the search capability, verify manually that typing updates the result list without a submit action
+- [x] 5.3 Implement keyboard navigation across the result list, verify manually that up/down changes the selection and updates the preview pane
+- [x] 5.4 Render the selected chat as Markdown (including code blocks) in the preview pane, verify manually against a fixture chat containing code blocks
+- [ ] 5.5 Manually verify the TUI renders and accepts keyboard input correctly in a real terminal on macOS, Linux, and Windows (macOS and Linux verified; Windows still pending)
 
 ## 6. Export Capability
 
