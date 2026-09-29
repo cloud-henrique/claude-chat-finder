@@ -35,7 +35,7 @@ macOS, Linux, and Windows binaries will be published on [GitHub Releases](../../
 
 ### From source (to contribute)
 
-Requires [Bun](https://bun.sh).
+Requires [Bun](https://bun.sh) — the version CI runs is pinned in [`.bun-version`](.bun-version), which `asdf`/`mise` also read.
 
 ```bash
 git clone https://github.com/cloud-henrique/claude-chat-finder.git
@@ -43,6 +43,16 @@ cd claude-chat-finder
 bun install
 bun run dev
 ```
+
+Before opening a PR, run what CI runs:
+
+```bash
+bun run typecheck
+bun run lint
+bun test
+```
+
+[CI](.github/workflows/ci.yml) type-checks and lints once on Linux, then runs the test suite on Linux, macOS, and Windows — the three targets binaries are published for.
 
 To build a local binary:
 
