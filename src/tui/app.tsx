@@ -1,6 +1,9 @@
 import type { Database } from "bun:sqlite";
+import { Buffer } from "node:buffer";
 import { Box, Text, useApp, useInput, useWindowSize } from "ink";
 import { useEffect, useMemo, useState } from "react";
+import { copyToClipboard, revealInFileManager } from "../export/run";
+import { toExportJson, toExportMarkdown } from "../export/serialize";
 import type { IndexStats } from "../indexing/build";
 import { type IndexedSession, loadSession } from "../indexing/read";
 import {
@@ -11,6 +14,8 @@ import {
 import { PreviewPane } from "./components/preview-pane";
 import { ResultList } from "./components/result-list";
 import { SearchInput } from "./components/search-input";
+import { footerHint } from "./footer";
+import { formatSize } from "./format";
 import { applyEdit, EMPTY_INPUT } from "./input-state";
 import { nextMode, type SearchMode, toSearchOptions } from "./search-mode";
 import { moveSelection } from "./viewport";
@@ -22,8 +27,28 @@ import { moveSelection } from "./viewport";
  */
 const SEARCH_DEBOUNCE_MS = 60;
 
-const FOOTER_HINT =
-  "↑↓ results · PgUp/PgDn preview · Tab mode · ^T case · ^U clear · Esc clear/quit · ^C quit";
+/** How long an export confirmation stays in the header. */
+const NOTICE_MS = 2500;
+
+/**
+ * Export actions are bound to Ctrl combinations because every printable key
+ * goes into the query — that is what makes search-as-you-type work. `^J` looks
+ * free but isn't usable: terminals send it as a line feed, which Ink reports
+ * as Enter.
+ */
+const EXPORT_KEYS: Record<string, ExportAction> = {
+  y: "markdown",
+  r: "json",
+  o: "reveal",
+};
+
+type ExportAction = "markdown" | "json" | "reveal";
+
+/** A transient line in the header: the only feedback an export action gives. */
+interface Notice {
+  text: string;
+  tone: "info" | "error";
+}
 
 /** Rows taken by the header, the query field and the footer. */
 const CHROME_ROWS = 3;
@@ -66,6 +91,7 @@ export function App({ db, runIndex }: AppProps) {
   const [search, setSearch] = useState<SearchState>(NO_RESULTS);
   const [selected, setSelected] = useState(0);
   const [scroll, setScroll] = useState(0);
+  const [notice, setNotice] = useState<Notice | null>(null);
 
   const bodyHeight = Math.max(1, rows - CHROME_ROWS);
   const listWidth = Math.min(Math.max(24, Math.floor(columns * 0.38)), 52);
@@ -86,6 +112,14 @@ export function App({ db, runIndex }: AppProps) {
       cancelled = true;
     };
   }, [runIndex]);
+
+  // Every notice is a fresh object, so re-running the same action restarts
+  // the countdown instead of inheriting the previous one.
+  useEffect(() => {
+    if (!notice) return;
+    const handle = setTimeout(() => setNotice(null), NOTICE_MS);
+    return () => clearTimeout(handle);
+  }, [notice]);
 
   useEffect(() => {
     if (index.status !== "ready") return;
@@ -136,6 +170,33 @@ export function App({ db, runIndex }: AppProps) {
     return result ? loadSession(db, result.source, result.id) : null;
   }, [db, results, selected]);
 
+  async function runExport(action: ExportAction) {
+    if (!session) {
+      setNotice({ text: "select a chat first", tone: "error" });
+      return;
+    }
+
+    try {
+      if (action === "reveal") {
+        await revealInFileManager(session.filePath);
+        setNotice({ text: "opened in your file manager", tone: "info" });
+        return;
+      }
+
+      const text =
+        action === "markdown"
+          ? toExportMarkdown(session)
+          : toExportJson(session);
+      await copyToClipboard(text);
+      setNotice({
+        text: `copied as ${action === "markdown" ? "Markdown" : "JSON"} (${formatSize(Buffer.byteLength(text))})`,
+        tone: "info",
+      });
+    } catch (cause) {
+      setNotice({ text: describe(cause), tone: "error" });
+    }
+  }
+
   useInput((chars, key) => {
     if (key.escape) {
       if (input.value.length > 0) {
@@ -153,6 +214,14 @@ export function App({ db, runIndex }: AppProps) {
 
     if (key.ctrl && chars === "t") {
       setCaseSensitive((value) => !value);
+      return;
+    }
+
+    const exportAction = key.ctrl ? EXPORT_KEYS[chars] : undefined;
+    if (exportAction) {
+      // Spawning a helper takes a few milliseconds; the key handler can't
+      // wait for it, so the result lands in the header when it arrives.
+      void runExport(exportAction);
       return;
     }
 
@@ -181,7 +250,17 @@ export function App({ db, runIndex }: AppProps) {
         <Text bold color="cyan">
           ccf
         </Text>
-        <Text dimColor>{`  ${statusLine(index, search)}`}</Text>
+        {notice ? (
+          <Text
+            color={notice.tone === "error" ? "red" : "green"}
+            wrap="truncate"
+          >{`  ${notice.text}`}</Text>
+        ) : (
+          <Text
+            dimColor
+            wrap="truncate"
+          >{`  ${statusLine(index, search)}`}</Text>
+        )}
       </Box>
 
       <SearchInput
@@ -220,7 +299,7 @@ export function App({ db, runIndex }: AppProps) {
 
       <Box width={columns}>
         <Text dimColor wrap="truncate">
-          {FOOTER_HINT}
+          {footerHint(columns)}
         </Text>
       </Box>
     </Box>

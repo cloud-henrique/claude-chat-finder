@@ -37,9 +37,11 @@
 
 ## 6. Export Capability
 
-- [ ] 6.1 Implement the "copy as Markdown" clipboard action, verify clipboard contents match the expected Markdown for a fixture chat
-- [ ] 6.2 Implement the "copy as JSON" clipboard action, verify clipboard contents parse as valid JSON matching the normalized session
-- [ ] 6.3 Implement "open containing file" using the OS default file manager, verify manually on macOS (Finder), Linux (`xdg-open`), and Windows (Explorer)
+- [x] 6.1 Implement the "copy as Markdown" clipboard action, verify clipboard contents match the expected Markdown for a fixture chat
+- [x] 6.2 Implement the "copy as JSON" clipboard action, verify clipboard contents parse as valid JSON matching the normalized session
+- [x] 6.3 Implement "open containing file" using the OS default file manager, verify manually on macOS (Finder), Linux (`xdg-open`), and Windows (Explorer)
+
+> 6.3's verification is complete on macOS (Finder opens on the selected file) and partial elsewhere: a Linux container covers the command resolution and the failure messages, but no headless runner has a desktop session to open a window in, and Windows Explorer is unverified for the same reason as 5.5 — the author has no Windows machine. Both are covered by unit tests of the per-OS decision, which CI runs on all three OSes.
 
 ## 7. Cross-Platform Distribution Capability
 
