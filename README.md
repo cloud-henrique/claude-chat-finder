@@ -27,11 +27,23 @@ Behavioral details (with testable scenarios) live in each capability's spec unde
 
 ### Pre-built binary (recommended, once the first release ships)
 
+Every release publishes one self-contained binary per platform on [GitHub Releases](../../releases), plus a `SHA256SUMS.txt` to check them against. Nothing else needs to be installed — no Bun, no Node.
+
+| Platform | Asset |
+|---|---|
+| macOS (Apple Silicon) | `ccf-darwin-arm64` |
+| macOS (Intel) | `ccf-darwin-x64` |
+| Linux x64 | `ccf-linux-x64` |
+| Linux arm64 | `ccf-linux-arm64` |
+| Windows x64 | `ccf-windows-x64.exe` |
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cloud-henrique/claude-chat-finder/main/install.sh | sh
+curl -fsSLO https://github.com/cloud-henrique/claude-chat-finder/releases/latest/download/ccf-darwin-arm64
+chmod +x ccf-darwin-arm64
+mv ccf-darwin-arm64 /usr/local/bin/ccf
 ```
 
-macOS, Linux, and Windows binaries will be published on [GitHub Releases](../../releases) — no runtime needs to be installed.
+The Linux binaries are built against glibc — a musl distro (Alpine) isn't covered yet. On macOS the binaries are ad-hoc signed but not notarized, so the first run of a downloaded copy needs its quarantine flag cleared: `xattr -d com.apple.quarantine ccf`.
 
 ### From source (to contribute)
 
@@ -52,13 +64,16 @@ bun run lint
 bun test
 ```
 
-[CI](.github/workflows/ci.yml) type-checks and lints once on Linux, then runs the test suite on Linux, macOS, and Windows — the three targets binaries are published for.
+[CI](.github/workflows/ci.yml) type-checks and lints once on Linux, then runs the test suite on Linux, macOS, and Windows — the three targets binaries are published for. Pushing a `v*` tag runs the [release workflow](.github/workflows/release.yml), which builds all five binaries, launches each one on the hardware it targets, and attaches them to a GitHub Release.
 
 To build a local binary:
 
 ```bash
-bun run build
+bun run build          # for this machine, into dist/ccf
+bun run build:all      # all five release targets
 ```
+
+Bun cross-compiles every target from any host, with one exception: a macOS binary has to be ad-hoc signed on a Mac, because `--compile` appends the bundle to the runtime and invalidates its signature — and an arm64 macOS kernel kills a binary whose signature doesn't verify. On a Mac, `bun run sign:macos` after `build:all` (or `codesign --force --sign - dist/ccf` after `build`) fixes that; the [release workflow](.github/workflows/release.yml) builds the two macOS targets on a macOS runner for the same reason.
 
 ## Usage
 

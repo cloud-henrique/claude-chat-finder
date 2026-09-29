@@ -129,7 +129,14 @@ Three things this shape buys, and one it costs:
 
 ## Build and distribution
 
-CI (GitHub Actions) runs `bun build --compile` across a macOS/Linux/Windows matrix and publishes the resulting binaries as assets on a tagged GitHub Release. There's no npm publish in the end-user install path — `bun install` is only needed for contributors working on the source.
+A `v*` tag runs [`release.yml`](.github/workflows/release.yml): build → smoke → publish. It compiles five binaries (`ccf-{darwin,linux}-{arm64,x64}` and `ccf-windows-x64.exe`), launches each one on the hardware it targets, then attaches them plus `SHA256SUMS.txt` to a GitHub Release. A manual run does everything except publish, which is how the pipeline gets exercised between releases. There's no npm publish in the end-user install path — `bun install` is only needed for contributors working on the source.
+
+Four things that shaped the pipeline:
+
+- **macOS binaries are built on macOS, everything else is cross-compiled from Linux.** `--compile` appends the bundle to the Bun runtime, which invalidates the runtime's code signature, and an arm64 macOS kernel kills a binary whose signature doesn't verify — the process dies with SIGKILL and prints nothing. `codesign --force --sign -` (an ad-hoc signature, `bun run sign:macos`) fixes it, and `codesign` only exists on a Mac.
+- **The binaries are ad-hoc signed, not notarized**, so a downloaded copy still carries macOS's quarantine flag until the user clears it. Notarization needs a paid Apple Developer account.
+- **Smoke tests run the binary where it belongs**: the Linux ones inside a bare `debian:bookworm-slim` container and the macOS ones under `env -i`, so neither can reach a pre-installed Bun or Node. That is the runtime-free claim being tested rather than asserted. The Windows runner ships Node, so its check proves the binary launches, not that it launched alone.
+- **`react-devtools-core` is a devDependency that only exists for the bundler.** Ink imports it behind `process.env.DEV === 'true'`, and `bun build` walks that import whether or not the branch can run. `--external` isn't an option: a compiled binary has no module resolver to satisfy it at runtime, so it fails at startup instead of at build time. Bundling the package costs about a megabyte of dead code.
 
 ## Why this design
 
