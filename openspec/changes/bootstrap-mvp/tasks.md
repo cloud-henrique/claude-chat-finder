@@ -46,10 +46,10 @@
 ## 7. Cross-Platform Distribution Capability
 
 - [x] 7.1 Add `bun build --compile` scripts per target (macOS x64/arm64, Linux x64/arm64, Windows x64), verify each produces a runnable binary locally
-- [ ] 7.2 Set up a GitHub Actions release workflow that builds all targets and attaches them to a tagged GitHub Release, verify a test tag push produces a release with all binary assets
+- [x] 7.2 Set up a GitHub Actions release workflow that builds all targets and attaches them to a tagged GitHub Release, verify a test tag push produces a release with all binary assets
 - [x] 7.3 Smoke-test each built binary launches without a pre-installed runtime, verify by running each binary in a clean CI container/VM with no Bun/Node installed
 
-> 7.2's workflow is written and its build/smoke jobs are what 7.1 and 7.3 were verified with, but the task stays open until a tag has actually produced a release: a workflow can only be dispatched or triggered once it's on the default branch. After merging, run it manually (build + smoke, publishes nothing), then push a throwaway `v0.0.0-test` tag — the workflow marks any hyphenated tag as a prerelease — and delete the release and the tag once the assets are confirmed.
+> 7.2 was verified twice on `main`: a manual run built and smoke-tested all five binaries without publishing anything, then a throwaway `v0.0.0-test` tag produced a prerelease carrying the five binaries and `SHA256SUMS.txt`. The macOS arm64 asset was downloaded back, matched its checksum, kept a valid ad-hoc signature through the artifact round trip, and rendered the full TUI. The test release and its tag were deleted afterwards.
 
 > 7.3 is verified locally for both Linux targets (a bare `debian:bookworm-slim` container with no Bun or Node) and for macOS arm64, where the compiled binary was also driven through a pty and rendered the full TUI. In CI it covers all five, each on the hardware it targets.
 
