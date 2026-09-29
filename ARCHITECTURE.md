@@ -105,6 +105,28 @@ Two consequences worth knowing:
 - **Markdown is rendered by a ~200-line module, not a library.** It emits styled spans per display line rather than a string, which is what lets the preview scroll by slicing lines, and makes the exact output assertable in tests. Same reasoning as `indexing/paths.ts`: a small, precisely testable surface beats a dependency.
 - **The preview never shows tool calls.** The adapter only extracts `text` blocks (see [Adapter contract](#adapter-contract)), so a turn made entirely of tool calls has no content — those messages are skipped instead of drawn as an empty heading.
 
+## Export
+
+Three actions on the selected chat — copy as Markdown (`^Y`), copy as JSON (`^R`), reveal the source file in the OS file manager (`^O`). They are bound to Ctrl combinations because every printable key goes into the query; that is what makes search-as-you-type work.
+
+| File | Responsibility |
+|---|---|
+| `export/serialize.ts` | An indexed session → the exported Markdown document, or the normalized session as JSON |
+| `export/commands.ts` | Which binary runs on which OS, and how its stdin must be encoded — pure, takes `platform`/`env` |
+| `export/run.ts` | Spawns that command and turns a failure into a sentence the user can act on |
+
+| | macOS | Windows | Linux |
+|---|---|---|---|
+| Clipboard | `pbcopy` | `clip` (UTF-16LE + BOM) | `wl-copy` on Wayland, else `xclip -selection clipboard` |
+| File manager | `open -R <file>` | `explorer.exe /select,"<file>"` | `xdg-open <dir>` |
+
+Three things this shape buys, and one it costs:
+
+- **No clipboard dependency.** Every per-OS decision is a pure function taking `platform`/`env`, so all three platforms are assertable from one test host — the same reasoning as [`indexing/paths.ts`](openspec/changes/bootstrap-mvp/design.md), and the reason the spawn itself is kept to a handful of lines.
+- **The exported Markdown is not the preview's Markdown.** `tui/transcript.ts` is display-shaped: no header, local `YYYY-MM-DD HH:MM` times. An exported chat is read somewhere else, so it carries a header (project, session id, source file) and absolute UTC timestamps.
+- **JSON is the normalized `Session`**, not the indexed row: `seq` exists because FTS5 has no inherent row order, and array order already carries it.
+- **Linux needs a helper installed** (`xclip` or `wl-clipboard`, and `xdg-utils`). Missing ones are reported with the package to install, rather than an errno.
+
 ## Build and distribution
 
 CI (GitHub Actions) runs `bun build --compile` across a macOS/Linux/Windows matrix and publishes the resulting binaries as assets on a tagged GitHub Release. There's no npm publish in the end-user install path — `bun install` is only needed for contributors working on the source.

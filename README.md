@@ -79,12 +79,14 @@ This opens the TUI, indexing (or incrementally re-indexing) your Claude Code his
 | Move the caret in the query | `←` / `→` / `Home` / `End` |
 | Delete the word before the caret | `Ctrl+W` |
 | Clear the query | `Ctrl+U`, or `Esc` |
-| Copy chat as Markdown | planned — [`export`](openspec/changes/bootstrap-mvp/specs/export/spec.md) capability |
-| Copy chat as JSON | planned — [`export`](openspec/changes/bootstrap-mvp/specs/export/spec.md) capability |
-| Open file in Finder/Explorer | planned — [`export`](openspec/changes/bootstrap-mvp/specs/export/spec.md) capability |
+| Copy the selected chat as Markdown | `Ctrl+Y` |
+| Copy the selected chat as JSON | `Ctrl+R` |
+| Reveal the chat's file in Finder/Explorer/your file manager | `Ctrl+O` |
 | Quit | `Esc` on an empty query, or `Ctrl+C` |
 
-Every printable key goes into the query (that's what makes search-as-you-type work), so commands are bound to modifier combinations rather than bare letters — the export shortcuts will follow the same rule.
+Every printable key goes into the query (that's what makes search-as-you-type work), so commands are bound to modifier combinations rather than bare letters. The footer shows as many of these hints as the terminal is wide enough for, dropping the least important ones first.
+
+On Linux, copying uses `wl-copy` on Wayland and `xclip` otherwise, and revealing a file uses `xdg-open` — install `wl-clipboard`, `xclip` and `xdg-utils` as your session needs. macOS and Windows need nothing extra. If a helper is missing, `ccf` says which package provides it.
 
 ## How it works
 
