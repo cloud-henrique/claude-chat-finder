@@ -6,11 +6,11 @@
   "private": true,
   "type": "module",
   "bin": {
-    "ccf": "./src/cli.ts"
+    "ccf": "./src/cli.tsx"
   },
   "scripts": {
-    "dev": "bun run src/cli.ts",
-    "build": "bun build ./src/cli.ts --compile --outfile dist/ccf",
+    "dev": "bun run src/cli.tsx",
+    "build": "bun build ./src/cli.tsx --compile --outfile dist/ccf",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",

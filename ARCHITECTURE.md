@@ -84,6 +84,27 @@ interface Message {
 - Re-indexing is incremental: only files whose `mtimeMs` differs from the stored value are reprocessed; sessions whose file has vanished from disk are removed from the index.
 - Lives in a per-OS config/cache directory — see [Configuration in the README](README.md#configuration). Per-platform path resolution is hand-rolled in `src/indexing/paths.ts` rather than delegated to a library: `resolveIndexDbPath(home, platform, env)` takes the platform as a parameter, so each OS's convention is assertable from any test host. A library like `env-paths` always joins through the *live* host's `node:path`, which makes exact Windows-style output untestable from macOS/Linux CI. The conventions themselves are the standard ones (XDG on Linux, `Application Support` on macOS, `%LOCALAPPDATA%` on Windows) — only the path-joining is inline. See the resolved Open Question in `design.md`.
 
+## TUI (Ink)
+
+`src/cli.tsx` opens the index, then renders `src/tui/app.tsx` into the terminal's **alternate screen** (like `vim` or `less`, so the user's scrollback survives). Indexing runs *after* the first paint — a full build takes over a second on a real history, which is too long to stare at a blank terminal for — and the header reports its progress.
+
+The pieces are split so that everything except the actual drawing is a pure function, and therefore unit-testable without a terminal:
+
+| File | Responsibility |
+|---|---|
+| `tui/app.tsx` | State and key handling: query, match mode, selection, scroll, debounced search |
+| `tui/components/` | Drawing only: search field, result list, preview pane, Markdown lines |
+| `tui/markdown.ts` | Markdown → styled display lines, pre-wrapped to a width |
+| `tui/input-state.ts` | The query field as a reducer (`applyEdit(state, input, key)`) |
+| `tui/viewport.ts` | Selection clamping and which slice of a list/preview is visible |
+| `tui/transcript.ts` | An indexed session → the Markdown shown in the preview |
+| `tui/console.ts` | Holds back `console.*` output while the TUI owns the screen |
+
+Two consequences worth knowing:
+
+- **Markdown is rendered by a ~200-line module, not a library.** It emits styled spans per display line rather than a string, which is what lets the preview scroll by slicing lines, and makes the exact output assertable in tests. Same reasoning as `indexing/paths.ts`: a small, precisely testable surface beats a dependency.
+- **The preview never shows tool calls.** The adapter only extracts `text` blocks (see [Adapter contract](#adapter-contract)), so a turn made entirely of tool calls has no content — those messages are skipped instead of drawn as an empty heading.
+
 ## Build and distribution
 
 CI (GitHub Actions) runs `bun build --compile` across a macOS/Linux/Windows matrix and publishes the resulting binaries as assets on a tagged GitHub Release. There's no npm publish in the end-user install path — `bun install` is only needed for contributors working on the source.

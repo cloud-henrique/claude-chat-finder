@@ -63,13 +63,18 @@ This opens the TUI, indexing (or incrementally re-indexing) your Claude Code his
 | Search | type (live search, no need to press Enter) |
 | Navigate results | `↑` / `↓` |
 | Preview the selected chat | automatic on selection |
-| Copy chat as Markdown | `c` `m` (to be finalized during implementation) |
-| Copy chat as JSON | `c` `j` (to be finalized during implementation) |
-| Open file in Finder/Explorer | `o` (to be finalized during implementation) |
-| Toggle case sensitive / whole word / regex | search options menu |
-| Quit | `Esc` / `Ctrl+C` |
+| Scroll the preview | `PgUp` / `PgDn` |
+| Cycle match mode (text → whole word → regex) | `Tab` |
+| Toggle case sensitivity | `Ctrl+T` |
+| Move the caret in the query | `←` / `→` / `Home` / `End` |
+| Delete the word before the caret | `Ctrl+W` |
+| Clear the query | `Ctrl+U`, or `Esc` |
+| Copy chat as Markdown | planned — [`export`](openspec/changes/bootstrap-mvp/specs/export/spec.md) capability |
+| Copy chat as JSON | planned — [`export`](openspec/changes/bootstrap-mvp/specs/export/spec.md) capability |
+| Open file in Finder/Explorer | planned — [`export`](openspec/changes/bootstrap-mvp/specs/export/spec.md) capability |
+| Quit | `Esc` on an empty query, or `Ctrl+C` |
 
-> Exact shortcuts will be finalized while implementing the [`tui`](openspec/changes/bootstrap-mvp/specs/tui/spec.md) capability and updated here.
+Every printable key goes into the query (that's what makes search-as-you-type work), so commands are bound to modifier combinations rather than bare letters — the export shortcuts will follow the same rule.
 
 ## How it works
 
