@@ -1,0 +1,156 @@
+name: Release
+
+# Tags build and publish; a manual run builds and smoke-tests without
+# publishing anything, which is how this workflow gets exercised between
+# releases.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # Bun cross-compiles every target from any host, but a macOS arm64 binary
+  # has to be ad-hoc signed on a Mac: `--compile` appends the bundle to the
+  # runtime and invalidates its signature, and the arm64 kernel kills a binary
+  # whose signature doesn't verify. So macOS builds its own two targets and
+  # signs them; Linux cross-compiles the rest.
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS binaries
+            os: macos-latest
+            targets: build:darwin-arm64 build:darwin-x64
+            sign: true
+          - name: Linux and Windows binaries
+            os: ubuntu-latest
+            targets: build:linux-x64 build:linux-arm64 build:windows-x64
+            sign: false
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - run: bun install --frozen-lockfile
+
+      - name: Compile
+        run: |
+          for target in ${{ matrix.targets }}; do
+            bun run "$target"
+          done
+
+      - name: Ad-hoc sign the macOS binaries
+        if: matrix.sign
+        run: bun run sign:macos
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: binaries-${{ matrix.os }}
+          path: dist/
+          if-no-files-found: error
+
+  # Every binary is launched on the hardware it targets. The two Linux ones run
+  # inside a bare `debian:bookworm-slim` container and the macOS ones under
+  # `env -i`, so neither can reach a pre-installed Bun or Node — that's the
+  # runtime-free claim, tested rather than asserted. The Windows runner ships
+  # Node, so its check proves the binary launches, not that it launched alone.
+  smoke:
+    name: Smoke-test ${{ matrix.binary }}
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            binary: ccf-linux-x64
+            launch: docker run --rm -v "$PWD/dist":/dist:ro debian:bookworm-slim /dist/ccf-linux-x64
+          - os: ubuntu-24.04-arm
+            binary: ccf-linux-arm64
+            launch: docker run --rm -v "$PWD/dist":/dist:ro debian:bookworm-slim /dist/ccf-linux-arm64
+          - os: macos-latest
+            binary: ccf-darwin-arm64
+            launch: env -i "$PWD/dist/ccf-darwin-arm64"
+          # Intel macOS runners are labelled macos-15-intel since macos-13 was
+          # retired, and GitHub drops x86_64 macOS entirely in late 2027.
+          - os: macos-15-intel
+            binary: ccf-darwin-x64
+            launch: env -i "$PWD/dist/ccf-darwin-x64"
+          - os: windows-latest
+            binary: ccf-windows-x64.exe
+            launch: ./dist/ccf-windows-x64.exe
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: binaries-*
+          merge-multiple: true
+          path: dist
+
+      # Artifacts travel as zip files, which don't carry the executable bit.
+      - name: Restore the executable bit
+        shell: bash
+        run: chmod +x "dist/${{ matrix.binary }}"
+
+      # The TUI needs a real terminal, so the binary can't be driven here. What
+      # it proves on every target is that the executable loads and refuses
+      # cleanly — the same guard a user hits when piping output.
+      - name: It launches and refuses a non-interactive terminal
+        shell: bash
+        run: |
+          set +e
+          output=$(${{ matrix.launch }} </dev/null 2>&1)
+          status=$?
+          set -e
+          echo "$output"
+          if [ "$status" -ne 1 ]; then
+            echo "::error::expected exit code 1, got $status"
+            exit 1
+          fi
+          case "$output" in
+            *"needs an interactive terminal"*) ;;
+            *) echo "::error::the TTY guard message is missing"; exit 1 ;;
+          esac
+
+  publish:
+    name: Publish the release
+    needs: smoke
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: binaries-*
+          merge-multiple: true
+          path: dist
+
+      - name: Checksums
+        run: cd dist && sha256sum ccf-* > SHA256SUMS.txt
+
+      # A tag with a hyphen (v0.1.0-rc.1, v0.0.0-test) is published as a
+      # prerelease, so trying the pipeline out never looks like a real release.
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          case "$GITHUB_REF_NAME" in
+            *-*) prerelease="--prerelease" ;;
+            *) prerelease="" ;;
+          esac
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            $prerelease \
+            dist/*
