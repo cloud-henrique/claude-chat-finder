@@ -35,3 +35,14 @@ export function formatTimestamp(timestamp: string): string {
   const day = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
   return `${day} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
+
+/**
+ * Formats a byte count compactly for a status line (`412 B`, `12.4 KB`).
+ * Decimal units: the number is there to tell the user roughly how much text
+ * they just copied, not to match a disk allocator.
+ */
+export function formatSize(bytes: number): string {
+  if (bytes < 1000) return `${Math.max(0, Math.round(bytes))} B`;
+  if (bytes < 1000 * 1000) return `${(bytes / 1000).toFixed(1)} KB`;
+  return `${(bytes / 1000 / 1000).toFixed(1)} MB`;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { formatDate, formatTimestamp, shortenHome } from "./format";
+import { formatDate, formatSize, formatTimestamp, shortenHome } from "./format";
 
 describe("shortenHome", () => {
   test("replaces the home prefix with a tilde", () => {
@@ -51,5 +51,21 @@ describe("formatTimestamp", () => {
 
   test("returns an empty string for an unparseable timestamp", () => {
     expect(formatTimestamp("nope")).toBe("");
+  });
+});
+
+describe("formatSize", () => {
+  test("keeps small payloads in bytes", () => {
+    expect(formatSize(0)).toBe("0 B");
+    expect(formatSize(999)).toBe("999 B");
+  });
+
+  test("switches to kilobytes at a thousand bytes", () => {
+    expect(formatSize(1000)).toBe("1.0 KB");
+    expect(formatSize(12_400)).toBe("12.4 KB");
+  });
+
+  test("switches to megabytes at a million bytes", () => {
+    expect(formatSize(2_500_000)).toBe("2.5 MB");
   });
 });
